@@ -5,21 +5,19 @@
     <style>
       body { 
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
-        /* GINAMIT ANG RUSI LOGO BILANG BACKGROUND DESIGN */
         background-image: url('https://googleusercontent.com'); 
-        background-color: #000000; /* Itim na base color kung sakaling mag-load ang picture */
+        background-color: #000000; 
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-attachment: fixed;
         display: flex; justify-content: center; align-items: center; min-height: 98vh; margin: 0;
       }
-      /* PINALAKAS ANG ANINO NG MGA BOX PARA LITAW SA MADILIM NA BACKGROUND */
       .login-box {
         width: 360px; margin: 7% auto; background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); box-sizing: border-box;
       }
       .login-logo {
-        font-size: 35px; text-align: center; margin-bottom: 25px; font-weight: 700; color: #f4c430; /* RUSI Yellow color */
+        font-size: 35px; text-align: center; margin-bottom: 25px; font-weight: 700; color: #f4c430; 
         text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
       }
       .login-logo b { font-weight: 700; }
@@ -32,7 +30,6 @@
       .form-group .glyphicon {
         position: absolute; top: 10px; right: 12px; font-size: 14px; color: #777;
       }
-      /* NAKA-TEMA SA RUSI YELLOW AND BLACK ANG MGA BUTTONS */
       .btn-primary {
         background-color: #f4c430; border-color: #e0b324; color: #000; display: block; width: 100%; height: 36px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: background 0.2s;
       }
@@ -43,7 +40,6 @@
       .loading { color: #8a6d3b; background-color: #fcf8e3; border: 1px solid #faebcc; }
       .success { color: #3c763d; background-color: #dff0d8; border: 1px solid #d6e9c6; }
       
-      /* STYLING FOR THE PORTAL CONTAINER ONLY */
       .portal-box { width: 440px; background: #fff; padding: 30px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); box-sizing: border-box; }
       .portal-box h3 { margin-top: 0; margin-bottom: 20px; color: #222; text-align: center; border-bottom: 3px solid #f4c430; padding-bottom: 10px; font-size: 20px; }
       .portal-box label { font-weight: bold; display: block; margin-bottom: 5px; color: #444; font-size: 13px; }
@@ -100,6 +96,9 @@
     </div>
 
     <script>
+      // 🚨 MAHALAGA: PALITAN MO ITO NG IYONG WEB APP URL MATAPOS MO I-DEPLOY SA APPS SCRIPT
+      const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwKaBVNIkWEkjIi8vssQQOPUAXjTKxU4MNEaDXQZP8eqm83ULCkDYwk_Z8LbtCHm2ZrKQ/exec";
+
       function handleLogin() {
         var user = document.getElementById('loginUser').value.trim();
         var pass = document.getElementById('loginPass').value.trim();
@@ -113,20 +112,23 @@
         
         btnLogin.disabled = true; loginMsg.className = "loading"; loginMsg.innerText = "⏳ Verifying session...";
         
-        google.script.run
-          .withSuccessHandler(function(res) {
-            btnLogin.disabled = false;
-            if(res.success) {
-              document.getElementById('loginWrapper').style.display = 'none';
-              document.getElementById('portalWrapper').style.display = 'block';
-            } else {
-              loginMsg.className = "error"; loginMsg.innerText = res.message;
-            }
-          })
-          .withFailureHandler(function(err) {
-            btnLogin.disabled = false; loginMsg.className = "error"; loginMsg.innerText = "❌ Error: " + err.message;
-          })
-          .checkLogin(user, pass);
+        var loginUrl = WEB_APP_URL + "?action=login&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass);
+
+        fetch(loginUrl, { method: "POST" })
+        .then(response => response.json())
+        .then(res => {
+          btnLogin.disabled = false;
+          if(res.success) {
+            document.getElementById('loginWrapper').style.display = 'none';
+            document.getElementById('portalWrapper').style.display = 'block';
+          } else {
+            loginMsg.className = "error"; loginMsg.innerText = res.message;
+          }
+        })
+        .catch(err => {
+          btnLogin.disabled = false; 
+          loginMsg.className = "error"; loginMsg.innerText = "❌ Error: " + err.message;
+        });
       }
 
       function submitForm() {
@@ -136,35 +138,47 @@
         var subject = document.getElementById('subject').value.trim();
         var assigned = document.getElementById('assigned').value;
         var priority = document.getElementById('priority').value;
-        var msgDiv = document.getElementById('msg'); var btn = document.getElementById('btnSubmit');
+        var msgDiv = document.getElementById('msg'); 
+        var btn = document.getElementById('btnSubmit');
         
         msgDiv.style.display = "block";
-        if(!userEmail || !userPhone || !branch || !subject) {
+        if(!userEmail || !userPhone || !branch || !subject || !assigned) {
           msgDiv.className = "error"; msgDiv.innerText = "⚠️ Paki-sagutan ang lahat ng impormasyon!"; return;
         }
         
         btn.disabled = true; msgDiv.className = "loading"; msgDiv.innerText = "⏳ Isinusumite ang ticket sa system...";
         
-        google.script.run
-          .withSuccessHandler(function(res) {
-            btn.disabled = false;
-            if (res.indexOf("Error") > -1) { 
-              msgDiv.className = "error"; 
-              msgDiv.innerText = "❌ " + res; 
-            } else { 
-              msgDiv.className = "success"; 
-              msgDiv.innerText = res; 
-              document.getElementById('branch').value = ''; 
-              document.getElementById('subject').value = ''; 
-              document.getElementById('userPhone').value = ''; 
-            }
-          })
-          .withFailureHandler(function(err) { 
-            btn.disabled = false; 
-            msgDiv.className = "error"; 
-            msgDiv.innerText = "❌ Error: " + err.message; 
-          })
-          .saveTicket(branch, subject, assigned, priority, userEmail, userPhone);
+        var postUrl = WEB_APP_URL + "?action=saveTicket" +
+                      "&branch=" + encodeURIComponent(branch) +
+                      "&subject=" + encodeURIComponent(subject) +
+                      "&assigned=" + encodeURIComponent(assigned) +
+                      "&priority=" + encodeURIComponent(priority) +
+                      "&userEmail=" + encodeURIComponent(userEmail) +
+                      "&userPhone=" + encodeURIComponent(userPhone);
+
+        fetch(postUrl, { method: "POST" })
+        .then(response => response.json())
+        .then(res => {
+          btn.disabled = false;
+          if (res.success) {
+             msgDiv.className = "success";
+             msgDiv.innerText = res.message;
+             
+             document.getElementById('userEmail').value = "";
+             document.getElementById('userPhone').value = "";
+             document.getElementById('branch').value = "";
+             document.getElementById('subject').value = "";
+             document.getElementById('assigned').value = "";
+          } else {
+             msgDiv.className = "error"; 
+             msgDiv.innerText = res.message || "❌ Nagka-error sa pagsusumite.";
+          }
+        })
+        .catch(err => {
+          btn.disabled = false;
+          msgDiv.className = "error";
+          msgDiv.innerText = "❌ Nagka-error sa server: " + err.message;
+        });
       }
     </script>
   </body>
